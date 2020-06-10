@@ -1,0 +1,81 @@
+# -*- coding:utf-8 -*-
+from selenium import webdriver
+import sys
+from urllib.parse import unquote_plus
+import json
+import base64
+
+
+class wbxt():
+    def __init__(self, param):
+        self.param = base64.decodebytes(param[1].replace('alert:','').encode('utf8')).decode()
+
+    def main(self):
+        # 获取数据 ['path', xjsxt', 'https://www.jianshu.com/sign_in/', 'session_email_or_mobile_number', 'session_password', '19122992', 'Gc12121114.','sign-in-button']
+        res = self.param.strip().split(',')
+        # 打开浏览器
+        # global全局变量，防止程序执行完浏览器关闭
+        global driver
+        if res[7] == 'I':
+            # IE浏览器
+            driver = webdriver.Ie()
+        else:
+            # 谷歌浏览器
+            driver = webdriver.Chrome()
+        driver.get(res[1])  # http://portal.nmsw.tax.cn/获取url
+
+        # 特殊处理
+        if "fxglfwpt" in res[0]:
+            # dom = driver.find_elements_by_xpath('//form[2]//input')
+            if '{' in unquote_plus(res[4]):
+                res[4] = json.loads(unquote_plus(res[4]))["username"]
+        # 用户名
+        try:
+            dom1 = driver.find_element_by_id(res[2])  # 获取用户名输入框
+        except:
+            dom1 = driver.find_element_by_name(res[2])
+        # 密码
+        try:
+            dom2 = driver.find_element_by_id(res[3])  # 获取密码输入框
+        except:
+            dom2 = driver.find_element_by_name(res[3])
+        # 登录
+        if "fxglfwpt" in res[0]:
+            # 特殊处理
+            dom3 = driver.find_elements_by_xpath('//td//span')[0]
+        if "qjdsjpt" in res[0]:
+            # 特殊处理
+            dom3 = driver.find_elements_by_class_name(res[6])[0]
+        if "xzhbgxxxt" in res[0] or "yzhbgxxxt" in res[0]:
+            # 特殊处理
+            dom3 = driver.find_elements_by_class_name(res[6])[0]
+        else:
+            try:
+                dom3 = driver.find_element_by_id(res[6])  # 查找登陆按钮
+            except:
+                dom3 = driver.find_element_by_name(res[6])
+
+        # 电子底账2.0需要设置税务机关参数
+        if "dzdz2" in res[0]:
+            # swjgDom = driver.find_element_by_id('zgswjgId')
+            jsStr = "document.getElementById('zgswjgId').value = '" + res[8][0:9] + "'"
+            driver.execute_script(jsStr)
+        if "xydxcxt" in res[0]:
+            jsStr = "document.getElementById('swjg').value = '" + res[8][0:9] + "'"
+            driver.execute_script(jsStr)
+        # 输入用户名
+        dom1.click()
+        dom1.clear()
+        dom1.send_keys(unquote_plus(res[4]))
+        # 输入密码
+        dom2.click()
+        dom2.clear()
+        dom2.send_keys(res[5])  # 输入密码
+        # 登录
+        dom3.click()
+
+
+if __name__ == "__main__":
+    wbxt(sys.argv).main()
+    # wbxt([['path'],
+    #       'alert:eXpoYmd4eHh0LGh0dHA6Ly83MS4xMi41MC40L29kcHMvLExvZ29uTmFtZSxQYXNzd29yZCwxMTUyODkwMDYwOCxnYzE0MTUsYnV0dG9uLEks']).main()
